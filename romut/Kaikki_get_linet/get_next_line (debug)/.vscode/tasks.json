@@ -1,0 +1,31 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "C/C++: getnextlinedebug clang build",
+			"command": "/usr/bin/clang",
+			"args": [
+				"-fdiagnostics-color=always",
+				"-g",
+				//"-Wall",
+				//"-Wextra",
+				//"-Werror",
+				"${workspaceFolder}/get_next_line.c",
+				"${workspaceFolder}/main.c",
+				"-L.",
+				"-lft",
+				"-o",
+				"${workspaceFolder}/getnextlinedebug"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+			"detail": "compiler: /usr/bin/clang"
+		}
+	]
+}
