@@ -42,7 +42,7 @@ int	checkadjacency(char *tetromino)
 	return (success);
 }
 
-int	checktetromino (char *tetromino)
+int	checktetromino(char *tetromino)
 {
 	int	blocks;
 	int	loops;
@@ -63,18 +63,20 @@ int	checktetromino (char *tetromino)
 			++i;
 		}
 		if (tetromino[i] != '\n')
-			return(fail);
+			return (fail);
 		++i;
 	}
-	if (blocks == 4 && checkadjacency(tetromino) == success && tetromino[20] == '\n')
+	if (blocks == 4
+		&& checkadjacency(tetromino) == success 
+		&& tetromino[20] == '\n')
 		return (success);
 	return (fail);
 }
 
-int copysingletetromino(int fd, char **tetromino)
+int	copysingletetromino(int fd, char **tetromino)
 {
-	char buf[21 + 1];
-	int r_value;
+	char	buf[21 + 1];
+	int		r_value;
 
 	ft_memset(buf, 0, 22);
 	r_value = read(fd, &buf, 21);
@@ -84,18 +86,22 @@ int copysingletetromino(int fd, char **tetromino)
 	return (r_value);
 }
 
-int validateinput(const char *argv)
+int	validateinput(const char *filename)
 {
-	int fd;
-	char *tetromino;
-	fd = open(*argv, O_RDONLY);
+	int		fd;
+	char	*tetromino;
+
+	fd = open(filename, O_RDONLY);
+	if (fd == -1)
+		ft_putstr_fd("Invalid file", 2);
 	while (copysingletetromino(fd, &tetromino) != 0)
 	{
 		if (checktetromino(tetromino) == fail)
 			return (fail);
 		ft_strdel(&tetromino);
 	}
-	return(success);
+	close(fd);
+	return (success);
 }
 
 

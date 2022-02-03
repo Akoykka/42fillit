@@ -6,7 +6,7 @@
 /*   By: akoykka <akoykka@student.hive.fi>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/25 11:25:05 by akoykka           #+#    #+#             */
-/*   Updated: 2022/02/03 09:37:17 by akoykka          ###   ########.fr       */
+/*   Updated: 2022/02/03 18:57:07 by akoykka          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,25 +17,20 @@
 #define SUCCESS 0
 #define NOT_FOUND 404
 #define FOUND 1
-int	get_next_line(const int fd, char **line);
-
-
 
 typedef struct s_tetromino
 {
-	int				optimal_solution;
 	char			*square;
 	char			**tetrominos;
-	int 			sidelen;
-	int				t_amount;
+	int				sidelen;
+	int				tetromino_amount;
 	char			*answer;
-	int				emptyspaces;
+	int				letter;
+}				t_tetromino;
 
-} 				t_tetromino;
-
-void copy_except(char *dest, char *src, int c)
+void	copy_except(char *dest, char *src, int c)
 {
-	int i;
+	int	i;
 
 	while (*src)
 	{
@@ -46,151 +41,154 @@ void copy_except(char *dest, char *src, int c)
 		}
 	src++;
 	}
-	return;
+	return ;
 }
 
-void save_tetrominos(int fd, char **tetrominos)
+int	count_and_save_tetrominos(char *filename, char **tetrominos)
 {
 	ssize_t		r_value;
-	char 	buf[21 + 1];
-	int i;
+	char		buf[21 + 1];
+	int			amount_of_tetrominos;
+	int			fd;
 
+	fd = open(filename, O_RDONLY);
+	amount_of_tetrominos = 0;
 	ft_memset(buf, '\0', 22);
 	r_value = read(fd, &buf, 21);
 	while (r_value)
 	{
-		i = 0;
 		*tetrominos = (char *)ft_memalloc(16 + 1);
 		copy_except(*tetrominos, buf, '\n');
-
-	tetrominos++;
-	r_value = read(fd, &buf, 21);
+		++tetrominos;
+		++amount_of_tetrominos;
+		r_value = read(fd, &buf, 21);
 	}
-	return;
+	close(fd);
+	return (amount_of_tetrominos);
 }
-
-
-
-char *makegrid(int sidelen)
+void	print_solution(t_tetromino *values)
 {
-	char *square;
+	int	print;
+	int	print1;
+
+	print = 0;
+	while (values->answer[print])
+	{
+		print1 = values->sidelen - 1;
+		while (print1--)
+		{
+			ft_putchar(values->answer[print]);
+			++print;
+		}
+		ft_putchar('\n');
+	}
+	printf("sidelen for answer is %d\n", (values->sidelen - 1));
+	printf("strlen is %lu\n", (ft_strlen(values->answer)));
+}
+/*void	print_progress(t_tetromino *values)
+{
+	char *progress;
+	int loop;
+	int x;
+	char *temp;
+	int = i;
+
+	temp = values->square;
+	x = 1;
+	progress = ft_memalloc(values->sidelen * values->sidelen + values->sidelen + 1);
+	loop = values->sidelen;
+	while (loop--)
+	{
+		temp[i] = 
+		temp += values->sidelen;
+		progress[values->sidelen * x] = '\n';
+		++x;
+
+	}
+	printf("%s\n Sidelen %d\n", progress, values->sidelen);
+}
+*/
+char	*makesquare(int sidelen)
+{
+	char	*square;
 
 	square = (char *)ft_memalloc(sidelen * sidelen + sidelen + 1);
 	if (!square)
 		exit(1);
 	ft_memset(square, '.', sidelen * sidelen);
-
-	return(square);
+	return (square);
 }
 
-void undo_last_tetromino(char *square, int c)
+void	undo_last_tetromino(char *square, int letter)
 {
-	while(*square)
+	while (*square)
 	{
-		if (*square == c)
+		if (*square == letter)
 			*square = '.';
 		++square;
 	}
 }
 
-int emptyspaces(char *square)
-{
-	int amount;
-
-	amount = 0;
-	while(*square)
-	{
-		if (*square == '.')
-			++amount;
-	++square;
-	}
-	return (amount);
-}
-
-int wallcollision(char *square, int sidelen, int c)
+int	wallcollision(t_tetromino *values)
 {
 	int	wall_index;
 
-	wall_index = sidelen;
-	while(square[wall_index])
+	wall_index = values->sidelen;
+	while (values->square[wall_index])
 	{
-		if (square[wall_index] == c && square[wall_index - 1] == c)
+		if (values->square[wall_index] == values->letter
+			&& values->square[wall_index - 1] == values->letter)
 		{
-			undo_last_tetromino(square,c);
+			undo_last_tetromino(values->square, values->letter);
 			return (FAIL);
 		}
-		wall_index = wall_index + sidelen;
+		wall_index = wall_index + values->sidelen;
 	}
+	//print_progress(values);
 	return (SUCCESS);
 }
 
-
-
-/*
-	int wallcollision(char *square, int sidelen, int c)
-	int loop;
-	int x;
-
-	x = 1;
-	loop = sidelen;
-	while(loop--)
-	{
-		if (square[sidelen * x] == square[(sidelen - 1) * x]
-		&& square[sidelen * x] != '.')
-		{
-			undo_last_tetromino(square,c);
-			return (FAIL);
-		}
-		++x;
-	}
-
-return (SUCCESS);
-}
-*/
-
-
-int convert_to_square_size(int distance, int sidelen)
+int	convert_to_square_size(int distance, int sidelen)
 {
-	int converted_len;
+	int	converted_len;
 
 	if (distance > 1)
 	{
 		converted_len = distance + (sidelen - 4);
-		return(converted_len);
+		return (converted_len);
 	}
 	return (distance);
 }
 
-int get_distance_from_tetromino(char *block, int sidelen)
+int	get_distance_from_tetromino(char *block, int sidelen)
 {
 	int	distance;
 
 	distance = 1;
 	while (block[distance] != '#')
 		++distance;
-	return(distance);
+	return (distance);
 }
 
-int collision(char *square, int index, int sidelen, int c, char *tetromino)
+int	collision(t_tetromino *values, int index)
 {
-	char *block;
-	int loop;
-	int dist_to_next;
+	char	*block;
+	int		loop;
+	int		dist_to_next;
 
-	square[index] = c;
-	block = ft_strchr(tetromino, '#');
-
+	values->square[index] = values->letter;
+	block = ft_strchr(*values->tetrominos, '#');
 	loop = 3;
 	while (loop--)
 	{
-		dist_to_next = get_distance_from_tetromino(block, sidelen);
-		index = index + convert_to_square_size(dist_to_next, sidelen);
+		dist_to_next = get_distance_from_tetromino(block, values->sidelen);
+		index = index + convert_to_square_size(dist_to_next, values->sidelen);
 		block = block + dist_to_next;
-		if (square[index] == '.')
-			square[index] = c;
+		if (values->square[index] == '.')
+			values->square[index] = values->letter;
 		else
 		{
-			undo_last_tetromino(square, c);
+			undo_last_tetromino(values->square, values->letter);
 			return (FAIL);
 		}
 
@@ -198,158 +196,89 @@ int collision(char *square, int index, int sidelen, int c, char *tetromino)
 	return (SUCCESS);
 }
 
-int get_first_block_on_row(char *square, int sidelen, int row)
+void	recursive_solver(t_tetromino *values)
 {
-	int i;
-
-	if (row == 1)
-		i = 0;
-	else
-		i = 1;
-
-	while (square[i * row] == '.')
-	{
-		++i;
-		if (sidelen - 1 != i)
-			return (0);
-	}
-	return (i);
-}
-int get_last_block_on_row(char *square, int sidelen, int row)
-{
-	int i;
-	int len_to_last_block;
-
-	i = sidelen;
-
-	while (square[i * row] == '.' &&  i > -1)
-		--i;
-
-	return i;
-}
-
-int get_highest_horizontal_len(int sidelen, char *square)
-{
-	int row;
-	int highest_value;
-	int width_of_tetrominos;
-	int first;
-	int last;
-
-	highest_value = 0;
-	i = 0;
-	row = 1;
-
-	while(row <= sidelen)
-	{
-		first = get_first_block_position_on_row(square, sidelen, row);
-		last = get_last_block_position_on_row(square, sidelen, row);
-
-		last - first = width_of_tetrominos;
-		if (width_of_tetrominos > highest_value)
-			highest_value = width_of_tetrominos;
-
-		++row;
-	}
-	return (highest_value);
-}
-
-int	get_highest_vertical_len(int sidelen, char *square)
-{
-
-
-
-
-}
-
-int get_highest_width
-{
-
-	get_highest_vertical_len
-
-	get_highest_horizontal_len
-
-	return(highest)
-}
-
-
-void recursive_solver(char **tetrominos, int c, t_tetromino *values)
-{
-	int i;
+	int	i;
 
 	i = 0;
-	if (!*tetrominos)
+	if (!*(values->tetrominos))
 	{
-		if (emptyspaces(values->square) < values->emptyspaces)
-		{
-		 values->answer = ft_strdup(values->square);
-		 values->emptyspaces = emptyspaces(values->square);
-		}
+		values->answer = ft_strdup(values->square);
+		return ;
 	}
-	else while (values->square[i])
+	while (values->answer == NULL && values->square[i])
 	{
-		if (values->square[i] == '.' && values->square[i]
-		&&	collision(values->square, i, values->sidelen, c, *tetrominos) == SUCCESS
-		&& wallcollision(values->square, values->sidelen, c) == SUCCESS)
+		if (values->square[i] == '.'
+			&& collision(values, i) == SUCCESS
+			&& wallcollision(values) == SUCCESS)
 		{
-			recursive_solver(++tetrominos, ++c, values);
-			--c;
-			--tetrominos;
-			undo_last_tetromino(values->square, c);
+			++values->letter;
+			++values->tetrominos;
+			recursive_solver(values);
+			--values->letter;
+			--values->tetrominos;
+			undo_last_tetromino(values->square, values->letter);
 		}
 		++i;
 	}
 }
 
-int main (int argc, const char **argv)
+int	count_minimum_sidelen(int tetromino_amount)
 {
-	int fd;
-	t_tetromino *values;
-	char 	*square;
+	int	sqroot_rounded_up;
 
+	sqroot_rounded_up = 0;
+	while (sqroot_rounded_up * sqroot_rounded_up <= tetromino_amount * 4)
+		++sqroot_rounded_up;
+	return (sqroot_rounded_up);
+}
 
+t_tetromino	*prepare_struct(char *filename)
+{
+	t_tetromino	*values;
+	int			tetromino_amount;
+
+	values = (t_tetromino *)malloc(sizeof(t_tetromino));
+	values->tetrominos = (char **)ft_memalloc(sizeof(char *) * (26 + 1));
+	if (!values || !values->tetrominos)
+		exit(1);
+	tetromino_amount = count_and_save_tetrominos(filename, values->tetrominos);
+	values->sidelen = count_minimum_sidelen(tetromino_amount);
+	values->answer = NULL;
+	values->square = NULL;
+	values->letter = 'A';
+	return (values);
+}
+
+int	main(int argc, char **argv)
+{
+	int			fd;
+	t_tetromino	*values;
+
+	if (argc == 0)
+	{
+		printf("Wheres the file?\n");
+		return (0);
+	}
 	if (argc != 2)
 	{
 		printf("USAGE\n");
 		return (0);
 	}
-	fd = open(argv[1], O_RDONLY);
-
-	// validator
-
-
-	//if (validateinput(argv[1]) == FAIL)
-	//{
-	//	printf("INVALID FILE\n");
-	//	return (0);
-	//}
-
-	// Validator end
-
-	values = (t_tetromino *)malloc(sizeof(t_tetromino));
-	values->tetrominos = (char **)ft_memalloc(sizeof(char *) * ( 26 + 1));
-
-
-	save_tetrominos(fd, values->tetrominos);
-	values->sidelen = 2;
-	values->emptyspaces = 666;
-	values->answer = NULL;
-
-	//solver
-
+	values = prepare_struct(argv[1]);
 	while (values->answer == NULL)
 	{
-		values->square = makegrid(values->sidelen); // redundant unless to check malloc
-		recursive_solver(values->tetrominos, 'A', values);
-		values->sidelen++;
+		ft_strdel(&values->square);
+		values->square = makesquare(values->sidelen);
+		recursive_solver(values);
+		++values->sidelen;
 	}
-	//(char **tetrominos, char *square, int c, int sidelen, t_tetromino *values)
-	//void recursive_solver(char **tetrominos, int c, t_tetromino *values)
-	//solver end
-
-
-	printf("%s\n", values->answer);
-	printf("sidelen for answer is %d\n", values->sidelen);
-	printf("strlen is %lu\n", (ft_strlen(values->answer) - 1));
+	print_solution(values);
+	ft_strdel(values->tetrominos);
+	ft_strdel(values->tetrominos);
+	ft_strdel(values->tetrominos);
+	ft_strdel(values->tetrominos);
+	ft_strdel(values->tetrominos);
+	ft_strdel(values->tetrominos);
 	return (0);
 }
