@@ -6,17 +6,17 @@
 /*   By: akoykka <akoykka@student.hive.fi>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/25 11:25:05 by akoykka           #+#    #+#             */
-/*   Updated: 2022/02/03 18:57:07 by akoykka          ###   ########.fr       */
+/*   Updated: 2022/02/04 22:15:09 by akoykka          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdio.h>
 #include "./libft/includes/libft.h"
 #include <fcntl.h>
+
+void check_leaks();
 #define FAIL 1
 #define SUCCESS 0
-#define NOT_FOUND 404
-#define FOUND 1
 
 typedef struct s_tetromino
 {
@@ -99,7 +99,7 @@ void	print_solution(t_tetromino *values)
 	loop = values->sidelen;
 	while (loop--)
 	{
-		temp[i] = 
+		temp[i] =
 		temp += values->sidelen;
 		progress[values->sidelen * x] = '\n';
 		++x;
@@ -108,10 +108,9 @@ void	print_solution(t_tetromino *values)
 	printf("%s\n Sidelen %d\n", progress, values->sidelen);
 }
 */
-char	*makesquare(int sidelen)
+char	*makesquare(char *square, int sidelen)
 {
-	char	*square;
-
+	ft_strdel(&square);
 	square = (char *)ft_memalloc(sidelen * sidelen + sidelen + 1);
 	if (!square)
 		exit(1);
@@ -203,6 +202,7 @@ void	recursive_solver(t_tetromino *values)
 	i = 0;
 	if (!*(values->tetrominos))
 	{
+		ft_strdel(&values->answer);
 		values->answer = ft_strdup(values->square);
 		return ;
 	}
@@ -250,35 +250,42 @@ t_tetromino	*prepare_struct(char *filename)
 	return (values);
 }
 
+
+void free_struct(t_tetromino *values)
+{
+	int	i;
+
+	i = 0;
+	while (values->tetrominos[i])
+	{
+		ft_strdel(&(values->tetrominos[i]));
+		++i;
+	}
+	ft_strdel(values->tetrominos);
+	ft_strdel(&values->answer);
+	ft_strdel(&values->square);
+	free(&values);
+	values = NULL;
+}
+
 int	main(int argc, char **argv)
 {
 	int			fd;
 	t_tetromino	*values;
 
-	if (argc == 0)
-	{
-		printf("Wheres the file?\n");
-		return (0);
-	}
-	if (argc != 2)
-	{
-		printf("USAGE\n");
-		return (0);
-	}
+	check_leaks();
+
 	values = prepare_struct(argv[1]);
 	while (values->answer == NULL)
 	{
-		ft_strdel(&values->square);
-		values->square = makesquare(values->sidelen);
+		values->square = makesquare(values->square, values->sidelen);
 		recursive_solver(values);
 		++values->sidelen;
 	}
 	print_solution(values);
-	ft_strdel(values->tetrominos);
-	ft_strdel(values->tetrominos);
-	ft_strdel(values->tetrominos);
-	ft_strdel(values->tetrominos);
-	ft_strdel(values->tetrominos);
-	ft_strdel(values->tetrominos);
+	free_struct(values);
+	check_leaks();
 	return (0);
 }
+
+//leaks -atExit -- ./a.out
